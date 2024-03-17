@@ -1,22 +1,13 @@
 import { StyleSheet, View, Button } from "react-native";
-
 import * as ExpoTorch from "expo-torch";
 
 export default function App() {
   const on = async () => {
-    try {
-      await ExpoTorch.setStateAsync(ExpoTorch.ON);
-    } catch (error) {
-      console.error(error);
-    }
+    await ExpoTorch.setStateAsync(ExpoTorch.ON);
   };
 
   const off = async () => {
-    try {
-      await ExpoTorch.setStateAsync(ExpoTorch.OFF);
-    } catch (error) {
-      console.error(error);
-    }
+    await ExpoTorch.setStateAsync(ExpoTorch.OFF);
   };
 
   return (
