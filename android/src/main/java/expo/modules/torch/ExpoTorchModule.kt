@@ -6,8 +6,9 @@ import android.hardware.camera2.CameraManager
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
+import expo.modules.kotlin.errors.CodedException
 
-class ReactNativeTorchModule : Module() {
+class ReactNativeTorchModule(val context: Context) : Module() {
   override fun definition() = ModuleDefinition {
     Name("ExpoTorch")
 
@@ -18,7 +19,7 @@ class ReactNativeTorchModule : Module() {
 
     AsyncFunction("setStateAsync") { params: Map<String, Any>, promise: Promise ->
       val state = params["state"] as? String ?: run {
-        promise.reject("E_INVALID_STATE", "The 'state' parameter is required and must be 'ON' or 'OFF'.")
+        promise.reject("E_INVALID_STATE", "The 'state' parameter is required and must be 'ON' or 'OFF'.", null)
         return@AsyncFunction
       }
 
@@ -34,16 +35,16 @@ class ReactNativeTorchModule : Module() {
             } else if (state == "OFF") {
               cameraManager.setTorchMode(cameraId, false)
             } else {
-              promise.reject("E_INVALID_STATE", "Invalid state. Use 'ON' or 'OFF'.")
-              return
+              promise.reject("E_INVALID_STATE", "Invalid state. Use 'ON' or 'OFF'.", null)
+              return@AsyncFunction
             }
             promise.resolve(null)
-            return
+            return@AsyncFunction
           }
         }
-        promise.reject("E_NO_FLASH", "No back-facing flash available.")
+        promise.reject("E_NO_FLASH", "No back-facing flash available.", null)
       } catch (e: CameraAccessException) {
-        promise.reject("E_CAMERA_ACCESS", "Failed to access the camera for torch mode.")
+        promise.reject("E_CAMERA_ACCESS", "Failed to access the camera for torch mode.", e)
       }
     }
   }
