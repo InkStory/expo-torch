@@ -6,9 +6,8 @@ import android.hardware.camera2.CameraManager
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
-import expo.modules.kotlin.errors.CodedException
 
-class ReactNativeTorchModule(val context: Context) : Module() {
+class ExpoTorchModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("ExpoTorch")
 
@@ -17,34 +16,28 @@ class ReactNativeTorchModule(val context: Context) : Module() {
       "OFF" to "OFF"
     )
 
-    AsyncFunction("setStateAsync") { params: Map<String, Any>, promise: Promise ->
-      val state = params["state"] as? String ?: run {
-        promise.reject("E_INVALID_STATE", "The 'state' parameter is required and must be 'ON' or 'OFF'.", null)
+    AsyncFunction("setStateAsync") { state: String, promise: Promise ->
+      val cameraManager = appContext.reactContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+      if (state != "ON" && state != "OFF") {
+        promise.reject("E_INVALID_STATE", "Invalid state: $state. Use 'ON' or 'OFF'.")
         return@AsyncFunction
       }
 
-      val cameraManager = context.applicationContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
       try {
         for (cameraId in cameraManager.cameraIdList) {
           val characteristics = cameraManager.getCameraCharacteristics(cameraId)
-          val hasFlash = characteristics.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE)
+          val hasFlash = characteristics.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) ?: false
           val isBackCamera = characteristics.get(android.hardware.camera2.CameraCharacteristics.LENS_FACING) == android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK
-          if (hasFlash == true && isBackCamera) {
-            if (state == "ON") {
-              cameraManager.setTorchMode(cameraId, true)
-            } else if (state == "OFF") {
-              cameraManager.setTorchMode(cameraId, false)
-            } else {
-              promise.reject("E_INVALID_STATE", "Invalid state. Use 'ON' or 'OFF'.", null)
-              return@AsyncFunction
-            }
+          if (hasFlash && isBackCamera) {
+            cameraManager.setTorchMode(cameraId, state == "ON")
             promise.resolve(null)
             return@AsyncFunction
           }
         }
-        promise.reject("E_NO_FLASH", "No back-facing flash available.", null)
+        promise.reject("E_TORCH_UNAVAILABLE", "Torch is not available on this device.")
       } catch (e: CameraAccessException) {
-        promise.reject("E_CAMERA_ACCESS", "Failed to access the camera for torch mode.", e)
+        promise.reject("E_TORCH_FAILURE", "Failed to set torch state: ${e.message}", e)
       }
     }
   }

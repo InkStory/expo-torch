@@ -1,6 +1,6 @@
 {
   "name": "expo-torch",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Module to control torch (flashlight) on Android & iOS.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
