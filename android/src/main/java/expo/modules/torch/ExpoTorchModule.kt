@@ -17,10 +17,13 @@ class ExpoTorchModule : Module() {
     )
 
     AsyncFunction("setStateAsync") { state: String, promise: Promise ->
-      val cameraManager = appContext.reactContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+      val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager ?: run {
+        promise.reject("E_CAMERA_MANAGER_UNAVAILABLE", "CameraManager is not available.", null)
+        return@AsyncFunction
+      }
 
       if (state != "ON" && state != "OFF") {
-        promise.reject("E_INVALID_STATE", "Invalid state: $state. Use 'ON' or 'OFF'.")
+        promise.reject("E_INVALID_STATE", "Invalid state: $state. Use 'ON' or 'OFF'.", null)
         return@AsyncFunction
       }
 
@@ -35,10 +38,13 @@ class ExpoTorchModule : Module() {
             return@AsyncFunction
           }
         }
-        promise.reject("E_TORCH_UNAVAILABLE", "Torch is not available on this device.")
+        promise.reject("E_TORCH_UNAVAILABLE", "Torch is not available on this device.", null)
       } catch (e: CameraAccessException) {
         promise.reject("E_TORCH_FAILURE", "Failed to set torch state: ${e.message}", e)
       }
     }
   }
+
+  private val context
+    get() = requireNotNull(appContext.reactContext)
 }
